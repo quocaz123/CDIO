@@ -1,10 +1,9 @@
 package com.example.CDIO.controller;
 
-
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,14 +27,24 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class UserController {
 
     private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PasswordEncoder passwordEncoder) {
         this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
     }
+
+    
 
     @PostMapping("/users")
     @ApiMessage("create a user")
-    public ResponseEntity<User> createUser(@RequestBody User poUser) {
+    public ResponseEntity<User> createUser(@Valid @RequestBody User poUser) throws IdInvalidation {
+        boolean isEmailExist = this.userService.isEmailExist(poUser.getEmail());
+        if (isEmailExist) {
+            throw new IdInvalidation("Email " + poUser.getEmail() + " đã tồn tại, vui lòng sử dụng email khác...");
+        }
+        String hashPassword = this.passwordEncoder.encode(poUser.getPassword());
+        poUser.setPassword(hashPassword);
         User user = this.userService.handleCreateUser(poUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
