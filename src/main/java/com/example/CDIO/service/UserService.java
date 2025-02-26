@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.example.CDIO.domain.User;
 import com.example.CDIO.domain.dto.LoginDTO;
 import com.example.CDIO.domain.dto.Meta;
+import com.example.CDIO.domain.dto.RegisterDTO;
 import com.example.CDIO.domain.dto.ResultPaginationDTO;
 import com.example.CDIO.repository.UserRepository;
 
@@ -76,6 +77,14 @@ public class UserService {
 
     public User getUserByRefreshTokenAndEmail(String token, String email){
         return this.userRepository.findByRefreshTokenAndEmail(token, email);
+    }
+
+    public User registerDTOtoUser(RegisterDTO registerDTO){
+        User user = new User();
+        user.setName(registerDTO.getName());
+        user.setEmail(registerDTO.getEmail());
+        user.setPassword(registerDTO.getPassword());
+        return user;
     }
 
     

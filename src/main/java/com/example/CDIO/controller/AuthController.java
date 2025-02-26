@@ -2,13 +2,14 @@ package com.example.CDIO.controller;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.CDIO.domain.User;
 import com.example.CDIO.domain.dto.LoginDTO;
+import com.example.CDIO.domain.dto.RegisterDTO;
 import com.example.CDIO.domain.dto.ResLoginDTO;
 import com.example.CDIO.service.UserService;
 import com.example.CDIO.util.SecurityUtil;
@@ -34,12 +36,14 @@ public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
     private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
     public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
-            UserService userService) {
+            UserService userService, PasswordEncoder passwordEncoder) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Value("${Quokka.jwt.refresh-token-validity-in-seconds}")
@@ -183,6 +187,17 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, deleteSpringCookie.toString()).body(null);
+    }
+
+    @PostMapping("/auth/register")
+    @ApiMessage("Register a user")
+    public ResponseEntity<User> registerAccount(@Valid @RequestBody RegisterDTO registerDTO){
+        User user = this.userService.registerDTOtoUser(registerDTO);
+        String hashPassword = this.passwordEncoder.encode(user.getPassword());
+
+        user.setPassword(hashPassword);
+        this.userService.handleCreateUser(user);
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 
 }
